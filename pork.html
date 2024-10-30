@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customizable GIF, Clock, and Date</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        #uploadContainer {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+        #gifContainer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        #gifContainer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .box {
+            position: fixed;
+            z-index: 10;
+            background-color: white;
+            padding: 10px;
+            cursor: move;
+            font-size: 2.28rem; /* Increased by 1.2 */
+            font-weight: 600;
+            border-radius: 5px;
+            border: none;
+            user-select: none;
+            transition: left 0.1s ease, top 0.1s ease; /* Smoother movement */
+        }
+        #clockBox {
+            top: 50px;
+            left: 10px;
+        }
+        #dateBox {
+            top: 100px;
+            left: 10px;
+        }
+        @media (max-width: 600px) {
+            .box {
+                font-size: 1.44rem; /* Adjusted for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="uploadContainer">
+        <input type="file" id="uploadGif" accept="image/gif">
+    </div>
+
+    <div id="gifContainer">
+        <img id="uploadedGif" src="" alt="Uploaded GIF">
+    </div>
+
+    <div id="clockBox" class="box">
+        <span id="clock"></span>
+        <span id="ampm"></span>
+    </div>
+
+    <div id="dateBox" class="box">
+        <span id="date"></span>
+    </div>
+
+    <script>
+        // Live clock and AM/PM function
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getUTCHours() - 5; // Chicago time (UTC - 5)
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            let adjustedHours = hours % 12; // Adjust to 12-hour format
+            if (adjustedHours === 0) adjustedHours = 12; // Adjust 0 to 12
+            if (hours < 10 && ampm === 'AM') adjustedHours = adjustedHours.toString(); // Single-digit hours for AM (1-9)
+            document.getElementById('clock').textContent = `${adjustedHours}:${minutes}:${seconds}`;
+            document.getElementById('ampm').textContent = ` ${ampm}`;
+        }
+
+        setInterval(updateClock, 1000);
+
+        // Date function (MM/DD/YYYY format)
+        function updateDate() {
+            const now = new Date();
+            const month = (now.getUTCMonth() + 1).toString().padStart(2, '0'); // Chicago time zone
+            const day = now.getUTCDate().toString().padStart(2, '0');
+            const year = now.getUTCFullYear();
+            document.getElementById('date').textContent = `${month}/${day}/${year}`;
+        }
+
+        updateDate(); // Update date on load
+
+        // GIF upload and display
+        document.getElementById('uploadGif').addEventListener('change', function (e) {
+            const gifFile = e.target.files[0];
+            if (gifFile) {
+                const gifURL = URL.createObjectURL(gifFile);
+                const gifImage = document.getElementById('uploadedGif');
+                gifImage.src = gifURL;
+                document.getElementById('gifContainer').style.display = 'block';
+            }
+        });
+
+        // Drag functionality for clock and date boxes (Desktop and Mobile)
+        function makeDraggable(element) {
+            let offsetX, offsetY;
+
+            const dragMouseDown = (event) => {
+                event.preventDefault();
+                offsetX = event.clientX - element.getBoundingClientRect().left;
+                offsetY = event.clientY - element.getBoundingClientRect().top;
+
+                document.onmousemove = dragElement;
+                document.onmouseup = stopDragging;
+            };
+
+            const dragElement = (event) => {
+                event.preventDefault();
+                element.style.left = `${event.clientX - offsetX}px`;
+                element.style.top = `${event.clientY - offsetY}px`;
+            };
+
+            const stopDragging = () => {
+                document.onmousemove = null;
+                document.onmouseup = null;
+            };
+
+            // Mobile touch functionality
+            const dragTouchStart = (event) => {
+                offsetX = event.touches[0].clientX - element.getBoundingClientRect().left;
+                offsetY = event.touches[0].clientY - element.getBoundingClientRect().top;
+
+                document.ontouchmove = dragTouchMove;
+                document.ontouchend = stopTouchDragging;
+            };
+
+            const dragTouchMove = (event) => {
+                element.style.left = `${event.touches[0].clientX - offsetX}px`;
+                element.style.top = `${event.touches[0].clientY - offsetY}px`;
+            };
+
+            const stopTouchDragging = () => {
+                document.ontouchmove = null;
+                document.ontouchend = null;
+            };
+
+            // Add both desktop and mobile event listeners
+            element.onmousedown = dragMouseDown;
+            element.ontouchstart = dragTouchStart;
+        }
+
+        // Apply draggable function to the clock and date boxes
+        makeDraggable(document.getElementById('clockBox'));
+        makeDraggable(document.getElementById('dateBox'));
+
+    </script>
+
+</body>
+</html>
